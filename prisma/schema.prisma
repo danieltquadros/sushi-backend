@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  COOKER
+  ADMIN
+  MASTER
+}
+
+model User {
+  id        String    @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String    @unique
+  password  String
+  phone     String?
+  address   String?
+  avatar    String?   @default("default.jpg")
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  orderList Order[]
+  addresses Address[]
+}
+
+model Ticket {
+  id        String  @id @default(uuid())
+  name      String
+  phone     String
+  order     Order?  @relation(fields: [orderId], references: [id])
+  address   Address @relation(fields: [addressId], references: [id])
+  orderId   String?
+  addressId String
+}
+
+model Order {
+  id          String    @id @default(uuid())
+  value       Int
+  price       Int
+  userId      String
+  owner       User      @relation(fields: [userId], references: [id])
+  ticket      Ticket[]
+  comboList   Combo[]
+  portionList Portion[]
+  productList Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+}
+
+model Combo {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  price       Int       @default(0)
+  description String?
+  productList Product[]
+  portionList Portion[]
+  available   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+  Order       Order?    @relation(fields: [orderId], references: [id])
+  orderId     String?
+}
+
+model Portion {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  price       Int      @default(0)
+  description String?
+  quantity    Int?
+  unit        String? // para unidade de medida
+  size        String? // pequena, média, grande
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   String
+  combo       Combo?   @relation(fields: [comboId], references: [id])
+  comboId     String?
+  order       Order?   @relation(fields: [orderId], references: [id])
+  orderId     String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model Product {
+  id             String       @id @default(uuid())
+  name           String       @unique
+  price          Int          @default(0)
+  description    String?
+  Order          Order?       @relation(fields: [orderId], references: [id])
+  orderId        String?
+  combo          Combo?       @relation(fields: [comboId], references: [id])
+  comboId        String?
+  ingredientList Ingredient[]
+  portion        Portion[]
+  available      Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+}
+
+model Ingredient {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  product     Product? @relation(fields: [productId], references: [id])
+  productId   String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  street       String
+  number       String
+  complement   String
+  neighborhood String
+  city         String
+  state        String
+  country      String
+  zipCode      String
+  reference    String
+  isDefault    Boolean  @default(false)
+  user         User?    @relation(fields: [userId], references: [id])
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  Ticket       Ticket[]
+}
